@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./Front_End/frontend-cursos
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - micro_usuarios
+      - micro_cursos
+    networks:
+      - app-network
+
+  micro_cursos:
+    build:
+      context: ./micro_cursos
+      dockerfile: Dockerfile
+    container_name: micro_cursos
+    ports:
+      - "8005:8005"
+    depends_on:
+      - mysql
+      - micro_usuarios
+    env_file:
+      - ./micro_cursos/.env
+    networks:
+      - app-network
+
+  micro_usuarios:
+    build:
+      context: ./micro_usuarios
+      dockerfile: Dockerfile
+    container_name: micro_usuarios
+    ports:
+      - "8004:8004"
+    depends_on:
+      - mysql
+    env_file:
+      - ./micro_usuarios/.env
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql-micro-spring
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+      MYSQL_DATABASE: sisdb2025
+      TZ: America/Guayaquil
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local

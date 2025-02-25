@@ -1,0 +1,205 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-micro-spring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-micro-spring
+  template:
+    metadata:
+      labels:
+        app: mysql-micro-spring
+    spec:
+      containers:
+        - name: mysql-micro-spring
+          image: cdjacome2/mysql:v1
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "123"
+            - name: MYSQL_DATABASE
+              value: "sisdb2025"
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-micro-spring
+spec:
+  selector:
+    app: mysql-micro-spring
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: micro-usuarios
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: micro-usuarios
+  template:
+    metadata:
+      labels:
+        app: micro-usuarios
+    spec:
+      containers:
+        - name: micro-usuarios
+          image: cdjacome2/micro-usuarios:v1
+          ports:
+            - containerPort: 8004
+          env:
+            - name: DB_HOST
+              value: "mysql-micro-spring"
+            - name: DB_DATABASE
+              value: "sisdb2025"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              value: "123"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: usuarios-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: micro-usuarios-service
+spec:
+  selector:
+    app: micro-usuarios
+  ports:
+    - protocol: TCP
+      port: 8004
+      targetPort: 8004
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: micro-cursos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: micro-cursos
+  template:
+    metadata:
+      labels:
+        app: micro-cursos
+    spec:
+      containers:
+        - name: micro-cursos
+          image: cdjacome2/micro-cursos:v1
+          ports:
+            - containerPort: 8005
+          env:
+            - name: DB_HOST
+              value: "mysql-micro-spring"
+            - name: DB_DATABASE
+              value: "sisdb2025"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              value: "123"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cursos-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: micro-cursos-service
+spec:
+  selector:
+    app: micro-cursos
+  ports:
+    - protocol: TCP
+      port: 8005
+      targetPort: 8005
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: cdjacome2/frontend:v1
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frontend-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
